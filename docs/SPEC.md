@@ -2,7 +2,7 @@
 
 > Documento de referência para o projeto **Python** que envia as notificações de notícias do app **Sistema Atalaia** (Flutter). É a fonte da verdade do contrato entre o worker e o app; mudanças aqui precisam ser refletidas no app (`lib/services/push/`) e vice-versa.
 >
-> Versão 2 · 30/09/2026
+> Versão 3 · 02/10/2026 (política de frequência revista após o dry-run: 8/dia, 60 min, cotas por período)
 
 ## 1. Contexto
 
@@ -110,14 +110,15 @@ Decisões de conteúdo:
 
 ## 5. Política de frequência (anti-spam)
 
-Objetivo: o usuário **nunca** ter motivo para desligar as notificações. Portais bem avaliados costumam ficar entre **3 e 6 notificações por dia**; acima disso, a taxa de desativação sobe rápido.
+Objetivo: o usuário **nunca** ter motivo para desligar as notificações. Portais bem avaliados costumam ficar entre **3 e 6 notificações por dia**; acima disso, a taxa de desativação sobe rápido. O teto de 8 só é atingido em dias de muita notícia, e as cotas por período impedem que ele se concentre num só horário.
 
 Limitação importante dos tópicos: o servidor **não sabe** quantas editorias cada pessoa segue. Por isso o controle mais forte é um **teto global**. Se o worker manda no máximo 6 por dia **no total**, ninguém recebe mais que 6, mesmo seguindo todas as editorias.
 
 | Regra | Valor padrão | Por quê |
 |---|---|---|
-| Teto global por dia (normais) | **6** | Teto real por usuário. |
-| Intervalo mínimo entre dois envios quaisquer | **40 min** | Espalha ao longo do dia. |
+| Teto global por dia (normais) | **8** | Teto real por usuário. |
+| Cotas por período (acumuladas) | **até 3 antes das 12h, até 6 antes das 18h** | Cobre manhã, tarde e noite. No dry-run de 01/10 o teto de 6 acabou às 13h e a tarde e a noite ficaram sem nada. O que um período não usa passa para o seguinte; a noite sempre tem pelo menos 2. |
+| Intervalo mínimo entre dois envios quaisquer | **60 min** | Espalha ao longo do dia e acompanha o ritmo do feed, que é atualizado mais ou menos a cada hora. |
 | Teto por editoria por dia | **3** | Uma editoria movimentada não monopoliza o dia. |
 | Intervalo mínimo na mesma editoria | **2 h** | Evita "rajadas" de Polícia, por exemplo. |
 | Horário de silêncio | **22:00–07:00** (America/Maceio) | Nada de normal à noite. O que surgir nesse período expira. |
@@ -147,7 +148,7 @@ Executada a cada **2 min** pelo `systemd` timer, com `flock` para nunca rodar du
 3. Para cada item **nunca visto**: gravar em `items` com status `pending` (se candidato) ou `skipped` com o motivo (`tv`, `no_body`, `old`, `category_disabled`, `duplicate_title`).
 4. **Primeira execução (tabela vazia)**: gravar tudo como `seeded` e **não enviar nada**. Sem isso, o primeiro deploy dispara uma notícia antiga.
 5. Marcar como `expired` os `pending` com mais de 60 min.
-6. Se estiver no horário de silêncio, ou o teto global do dia foi atingido, ou o último envio foi há menos de 40 min: **sair**.
+6. Se estiver no horário de silêncio, ou o teto global do dia ou a cota acumulada do período foi atingida, ou o último envio foi há menos de 60 min: **sair**.
 7. Entre os `pending`, descartar os de editorias que atingiram o teto do dia ou enviaram há menos de 2 h; escolher 1 pela regra da seção 6.
 8. Enviar. Sucesso: `sent` + registro em `sends` (id da mensagem FCM). Erro temporário (`UNAVAILABLE`, `INTERNAL`, timeout): mantém `pending` e tenta na próxima execução. Erro permanente (`INVALID_ARGUMENT`): `failed`, com log de erro.
 9. Log estruturado (JSON por linha) de cada decisão relevante.
@@ -196,8 +197,9 @@ timezone = "America/Maceio"
 firebase_project = "app-radios-d4371"
 
 [policy]
-max_per_day = 6
-min_gap_minutes = 40
+max_per_day = 8
+min_gap_minutes = 60
+period_caps = [{ until = "12:00", max = 3 }, { until = "18:00", max = 6 }]  # acumuladas no dia
 per_category_max_per_day = 3
 per_category_min_gap_minutes = 120
 quiet_hours = ["22:00", "07:00"]

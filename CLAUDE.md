@@ -12,7 +12,7 @@ Worker em Python que lê o RSS do portal a8se.com, escolhe quais notícias viram
 
 1. **Contrato com o app** (SPEC §4): tópicos `news_<slug>`, `news_urgente`, `news_teste`; `data` com `type="news"`, `guid`, `url` (https, a8se.com) e `category`, **todos strings**; `android.notification.channel_id="news"`; `tag`/`apns-collapse-id` = tópico da editoria; TTL de 4 h. O app já está publicado e depende disso: não mude sem combinar uma versão nova do app.
 2. **Nunca notificar quadros de TV** (URL `/tv-atalaia/`) nem itens sem `content:encoded`: o app não tem texto para mostrar.
-3. **Política de frequência** (SPEC §5) é requisito de produto, não sugestão. Teto global de 6/dia, intervalo de 40 min, 3/dia e 2 h por editoria, silêncio das 22h às 7h (America/Maceio), candidatos com até 60 min. Tudo vem da configuração; não coloque números fixos no código.
+3. **Política de frequência** (SPEC §5) é requisito de produto, não sugestão. Teto global de 8/dia com cotas por período (até 3 antes das 12h, até 6 antes das 18h), intervalo de 60 min, 3/dia e 2 h por editoria, silêncio das 22h às 7h (America/Maceio), candidatos com até 60 min. Tudo vem da configuração; não coloque números fixos no código.
 4. **Primeira execução não envia nada** (*seed*). Um deploy nunca pode disparar notícias antigas.
 5. **Modos** `dry-run` / `test` / `production`. Desenvolvimento e testes usam `dry-run` ou `test` (este publica **só** em `news_teste`). Nunca troque para `production` sem o aceite da SPEC §12 e a confirmação explícita do responsável.
 6. **Segredos**: o JSON da conta de serviço fica em `/etc/a8se-push/`, fora do repositório. Nunca faça commit dele, não o imprima em logs e não o copie para outro lugar.

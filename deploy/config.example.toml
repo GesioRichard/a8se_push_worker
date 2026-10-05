@@ -1,0 +1,58 @@
+# /etc/a8se-push/config.toml — configuração do worker (SPEC §9). Sem segredos.
+#
+# mode:
+#   dry-run    faz tudo, mas não chama o FCM; só registra no log o que enviaria.
+#   test       envia de verdade, mas SÓ para o tópico news_teste (builds de debug do app).
+#   production envia para os tópicos reais. Só depois do aceite da SPEC §12 e com a
+#              confirmação explícita do responsável.
+mode = "dry-run"
+
+feed_url = "https://a8se.com/rss.xml"
+timezone = "America/Maceio"
+firebase_project = "app-radios-d4371"
+state_db = "/var/lib/a8se-push/state.db"
+
+# Heartbeat (ex.: healthchecks.io). Vazio = desligado.
+# Ping em "<url>" ao fim de cada execução bem-sucedida e em "<url>/fail" após
+# feed.failure_alert_threshold falhas seguidas de leitura do RSS.
+healthcheck_url = ""
+
+[policy]
+max_per_day = 8                     # teto global de envios normais por dia
+min_gap_minutes = 60                # intervalo mínimo entre dois envios quaisquer
+# Cotas acumuladas no dia, para cobrir manhã, tarde e noite: antes das 12h no
+# máximo 3; antes das 18h no máximo 6 (no total); depois, até max_per_day.
+# O que um período não usa passa para o seguinte. [] desliga as cotas.
+period_caps = [{ until = "12:00", max = 3 }, { until = "18:00", max = 6 }]
+per_category_max_per_day = 3        # teto por editoria por dia
+per_category_min_gap_minutes = 120  # intervalo mínimo na mesma editoria
+quiet_hours = ["22:00", "07:00"]    # silêncio (fuso de `timezone`)
+candidate_max_age_minutes = 60      # idade máxima de um candidato desde o pubDate
+urgent_max_per_day = 2              # urgente: só manual, fura silêncio e intervalo global
+ttl_hours = 4                       # TTL da mensagem no FCM
+max_per_run = 1                     # envios por execução
+future_tolerance_minutes = 10       # pubDate no futuro aceito até este limite
+duplicate_title_hours = 24          # janela de deduplicação por título
+items_retention_days = 30           # limpeza da tabela items
+
+[feed]
+timeout_seconds = 20
+attempts = 2
+failure_alert_threshold = 5
+
+[remote_config]
+parameter = "news_categories"
+cache_minutes = 60
+
+[categories]
+enabled = []                  # vazio = todas as editorias de notícia
+
+[categories.priority]         # maior = escolhido primeiro; ausente = 0
+sergipe = 3
+policia = 2
+politica = 2
+eleicoes = 2
+saude = 2
+economia = 2
+brasil = 1
+esportes = 1

@@ -1,1 +1,19 @@
 app-radios-d4371-060573d7736b.json
+
+# Segredos: nenhum JSON de conta de serviço entra no repositório (CLAUDE.md, regra 6)
+app-radios-*.json
+*service-account*.json
+*-firebase-adminsdk-*.json
+
+# Ambiente local
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Configuração e estado de desenvolvimento
+config.dev.toml
+var/
+*.db

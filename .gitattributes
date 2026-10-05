@@ -1,0 +1,6 @@
+# Arquivos que vão para a VM Linux precisam de LF mesmo quando o checkout é no Windows
+*.sh      text eol=lf
+*.service text eol=lf
+*.timer   text eol=lf
+*.toml    text eol=lf
+*.env.example text eol=lf
